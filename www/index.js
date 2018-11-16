@@ -1,5 +1,6 @@
 import {Cell, Universe} from "wasm-game-of-life";
 import {memory} from "wasm-game-of-life/wasm_game_of_life_bg";
+import * as $ from 'jquery';
 
 const CELL_SIZE = 5; // px
 const GRID_COLOR = "#CCCCCC";
@@ -7,22 +8,28 @@ const DEAD_COLOR = "#FFFFFF";
 const ALIVE_COLOR = "#000000";
 const GRID_SIZE = 1;
 
-const universe = Universe.new();
-const width = universe.width();
-const height = universe.height();
 
 const canvas = document.getElementById("game-of-life-canvas");
+const $startBtn = $("#startBtn");
+const $stopBtn = $("#stopBtn");
+const $resetBtn = $("#resetBtn");
+let universe = Universe.new();
+let width = universe.width();
+let height = universe.height();
 canvas.height = (CELL_SIZE + GRID_SIZE) * height + GRID_SIZE;
 canvas.width = (CELL_SIZE + GRID_SIZE) * width + GRID_SIZE;
 
+let draw = true;
 const ctx = canvas.getContext('2d');
 
 const renderLoop = () => {
-    universe.tick();
-
-    drawCells();
-
+    if (draw) {
+        universe.tick();
+        drawCells();
+        // ライフゲームを描画
+    }
     requestAnimationFrame(renderLoop);
+
 };
 
 
@@ -84,7 +91,52 @@ const drawCells = () => {
     ctx.stroke();
 };
 
-// GRIDを描画
-drawGrid();
-// ライフゲームを描画
-renderLoop();
+const init = () => {
+    universe = Universe.new();
+    width = universe.width();
+    height = universe.height();
+    drawGrid();
+    drawCells();
+    $stopBtn.click();
+}
+$(function () {
+    // GRIDを描画
+    drawGrid();
+    drawCells();
+
+    $startBtn.on('click', () => {
+        if (draw) {
+            renderLoop();
+        } else {
+            draw = true;
+        }
+    });
+
+    $stopBtn.on('click', () => {
+        draw = false;
+    });
+
+    $resetBtn.on('click', () => {
+        init();
+    })
+});
+
+var x = 0;
+var y = 0;
+
+function onClick(e) {
+    /*
+     * rectでcanvasの絶対座標位置を取得し、
+     * クリック座標であるe.clientX,e.clientYからその分を引く
+     * ※クリック座標はdocumentからの位置を返すため
+     * ※rectはスクロール量によって値が変わるので、onClick()内でつど定義
+     */
+    const rect = e.target.getBoundingClientRect();
+    x = Math.floor((Math.round(e.clientX - rect.left)) / (CELL_SIZE + GRID_SIZE));
+    y = Math.floor((Math.round(e.clientY - rect.top)) / (CELL_SIZE + GRID_SIZE));
+    alert(x + ":" + y)
+
+}
+
+
+canvas.addEventListener('click', onClick, false);
